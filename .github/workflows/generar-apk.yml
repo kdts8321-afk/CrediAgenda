@@ -86,7 +86,7 @@ jobs:
             adb shell am start -W -n mx.crediagenda.app.mx23/mx.crediagenda.app.MainActivity
             sleep 4
             adb shell pidof mx.crediagenda.app.mx23
-            python patches/check_access_22.py
+            CREDIAGENDA_TEST_PACKAGE=mx.crediagenda.app.mx23 python patches/check_access_22.py
             python patches/check_cutoffs_23.py
       - name: Publicar APK de CrediAgenda 2
         uses: actions/upload-artifact@v4
