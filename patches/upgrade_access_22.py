@@ -41,11 +41,16 @@ change("""        setContentView(outer);
         else render();
     }
 
-    @Override protected void onStop() {
-        super.onStop();
+    @Override protected void onPause() {
         accessUnlocked = false;
         clearPendingAccess();
         if (store != null && body != null) showAccessScreen();
+        super.onPause();
+    }
+
+    @Override protected void onStop() {
+        super.onStop();
+        accessUnlocked = false;
     }""", "lifecycle")
 
 change("""    private void render() {
