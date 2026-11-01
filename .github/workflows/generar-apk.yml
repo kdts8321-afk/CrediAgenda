@@ -21,6 +21,7 @@ jobs:
           echo '8d173e9371206ea51d8538176e29a38d934a6954a563019f3b8d53629ad16ac8  source.tar.xz' | sha256sum --check
           tar -xJf source.tar.xz
           test -f app/src/main/AndroidManifest.xml
+          sed -i 's/b\\.setTextAllCaps(false);/b.setAllCaps(false);/' app/src/main/java/mx/crediagenda/app/MainActivity.java
       - name: Configurar Java
         uses: actions/setup-java@v4
         with:
