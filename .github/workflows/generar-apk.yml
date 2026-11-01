@@ -66,7 +66,7 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$tmp/key.jks" --ks-key-alias crediagenda --ks-pass "pass:$pass" --key-pass "pass:$pass" --v2-signing-enabled true --v3-signing-enabled true --out Personal-2.4.apk "$tmp/align.apk"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs Personal-2.4.apk
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Personal-2.4.apk | head -n 19
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Personal-2.4.apk | grep "application-label:\x27Personal\x27"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Personal-2.4.apk | grep -F "application-label:'Personal'"
           rm -rf "$tmp"
       - name: Habilitar KVM
         shell: bash
