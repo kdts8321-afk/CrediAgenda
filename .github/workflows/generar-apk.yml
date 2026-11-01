@@ -1,4 +1,4 @@
-name: Generar APK de CrediAgenda
+name: CrediAgenda 2 - Tarjetas y logos
 
 on:
   push:
@@ -10,52 +10,66 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
-      issues: write
     steps:
       - name: Obtener codigo
         uses: actions/checkout@v4
-      - name: Reconstruir y verificar codigo fuente
+      - name: Reconstruir base del proyecto
         shell: bash
         run: |
           cat source-1.b64 source-2.b64 source-3.b64 source-4.b64 | base64 --decode > source.tar.xz
           echo '8d173e9371206ea51d8538176e29a38d934a6954a563019f3b8d53629ad16ac8  source.tar.xz' | sha256sum --check
           tar -xJf source.tar.xz
           test -f app/src/main/AndroidManifest.xml
-          sed -i 's/setTextAllCaps/setAllCaps/g' app/src/main/java/mx/crediagenda/app/MainActivity.java
-          ! grep -q setTextAllCaps app/src/main/java/mx/crediagenda/app/MainActivity.java
+      - name: Instalar herramientas para logos
+        run: python -m pip install --disable-pip-version-check --quiet cairosvg Pillow
+      - name: Actualizar interfaz y preparar logos
+        shell: bash
+        run: |
+          python patches/upgrade_cards.py
+          python patches/create_logos.py
+          sed -i "s/applicationId 'mx.crediagenda.app'/applicationId 'mx.crediagenda.app.cards2026'/" app/build.gradle
+          sed -i "s/versionCode 1/versionCode 2/" app/build.gradle
+          sed -i "s/versionName '1.0'/versionName '2.0'/" app/build.gradle
+          sed -i 's/android:label="CrediAgenda"/android:label="CrediAgenda 2"/' app/src/main/AndroidManifest.xml
+          grep "applicationId 'mx.crediagenda.app.cards2026'" app/build.gradle
       - name: Configurar Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-      - name: Preparar SDK Android preinstalado
+      - name: Configurar SDK Android
         shell: bash
         run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          ls -la "$ANDROID_HOME/cmdline-tools"
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'platforms;android-35' 'build-tools;35.0.0'
       - name: Configurar Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
-      - name: Compilar CrediAgenda
+      - name: Compilar APK de release
         shell: bash
         run: |
           set -o pipefail
-          gradle --no-daemon assembleDebug 2>&1 | tee build.log
-      - name: Verificar estructura, firma e identidad del APK
+          gradle --no-daemon assembleRelease 2>&1 | tee build.log
+      - name: Firmar APK 2.0
         shell: bash
         run: |
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs app/build/outputs/apk/debug/app-debug.apk
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging app/build/outputs/apk/debug/app-debug.apk | head -n 30
-      - name: Habilitar virtualización para simulador
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          pass="$(openssl rand -hex 24)"
+          keytool -genkeypair -keystore "$tmp/key.jks" -alias crediagenda -storepass "$pass" -keypass "$pass" -keyalg RSA -keysize 3072 -validity 3650 -dname "CN=CrediAgenda Version 2, O=Personal, C=MX"
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -f -p 4 app/build/outputs/apk/release/app-release-unsigned.apk "$tmp/align.apk"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$tmp/key.jks" --ks-key-alias crediagenda --ks-pass "pass:$pass" --key-pass "pass:$pass" --v2-signing-enabled true --v3-signing-enabled true --out CrediAgenda-2.0.apk "$tmp/align.apk"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs CrediAgenda-2.0.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging CrediAgenda-2.0.apk | head -n 19
+          rm -rf "$tmp"
+      - name: Habilitar KVM
         shell: bash
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Probar instalación e inicio en Android 14
+      - name: Probar instalacion y apertura en Android 14
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -64,73 +78,15 @@ jobs:
           profile: pixel_5
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
           script: |
-            adb install -r app/build/outputs/apk/debug/app-debug.apk
-            adb shell pm path mx.crediagenda.app
-            adb shell am start -W -n mx.crediagenda.app/.MainActivity
+            adb install CrediAgenda-2.0.apk
+            adb shell pm path mx.crediagenda.app.cards2026
+            adb shell am start -W -n mx.crediagenda.app.cards2026/mx.crediagenda.app.MainActivity
             sleep 4
-            adb shell pidof mx.crediagenda.app
-            adb logcat -d -s AndroidRuntime:E PackageManager:E | tail -n 100
-      - name: Publicar APK
+            adb shell pidof mx.crediagenda.app.cards2026
+      - name: Publicar APK de CrediAgenda 2
         uses: actions/upload-artifact@v4
         with:
-          name: CrediAgenda-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: CrediAgenda-2.0-APK
+          path: CrediAgenda-2.0.apk
           if-no-files-found: error
           retention-days: 30
-      - name: Compilar versión de prueba sin modo depuración
-        shell: bash
-        run: |
-          sed -i "s/applicationId 'mx.crediagenda.app'/applicationId 'mx.crediagenda.app.prueba2026'/" app/build.gradle
-          sed -i "s/versionCode 1/versionCode 2/" app/build.gradle
-          sed -i "s/versionName '1.0'/versionName '1.1-diagnostico'/" app/build.gradle
-          gradle --no-daemon assembleRelease
-          test -f app/build/outputs/apk/release/app-release-unsigned.apk
-      - name: Firmar versión de diagnóstico como release
-        shell: bash
-        run: |
-          set -euo pipefail
-          TMP_KEY="$(mktemp -d)"
-          KEY_PASSWORD="$(openssl rand -hex 24)"
-          keytool -genkeypair -v -keystore "$TMP_KEY/crediagenda-test.jks" -alias crediagenda -storepass "$KEY_PASSWORD" -keypass "$KEY_PASSWORD" -keyalg RSA -keysize 3072 -validity 3650 -dname "CN=CrediAgenda Diagnostic, O=Personal Test, C=MX"
-          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -p -f 4 app/build/outputs/apk/release/app-release-unsigned.apk "$TMP_KEY/aligned.apk"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$TMP_KEY/crediagenda-test.jks" --ks-key-alias crediagenda --ks-pass "pass:$KEY_PASSWORD" --key-pass "pass:$KEY_PASSWORD" --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true --out CrediAgenda-diagnostico.apk "$TMP_KEY/aligned.apk"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs CrediAgenda-diagnostico.apk
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging CrediAgenda-diagnostico.apk | head -n 17
-          rm -rf "$TMP_KEY"
-      - name: Probar el APK de diagnóstico en Android 14
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 34
-          target: google_apis
-          arch: x86_64
-          profile: pixel_5
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
-          script: |
-            adb install CrediAgenda-diagnostico.apk
-            adb shell pm path mx.crediagenda.app.prueba2026
-            adb shell am start -W -n mx.crediagenda.app.prueba2026/mx.crediagenda.app.MainActivity
-            sleep 3
-            adb shell pidof mx.crediagenda.app.prueba2026
-      - name: Publicar APK diagnóstico
-        uses: actions/upload-artifact@v4
-        with:
-          name: CrediAgenda-Diagnostico-Release
-          path: CrediAgenda-diagnostico.apk
-          if-no-files-found: error
-          retention-days: 30
-      - name: Informar resultado de compilación
-        if: always()
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          BUILD_STATUS: ${{ job.status }}
-        run: |
-          echo "### Compilación: ${BUILD_STATUS}" > report.md
-          echo "Ejecución: https://github.com/${GH_REPO}/actions/runs/${GITHUB_RUN_ID}" >> report.md
-          echo "" >> report.md
-          echo '### Últimas líneas del registro' >> report.md
-          echo '~~~' >> report.md
-          if test -f build.log; then tail -n 65 build.log >> report.md; else echo "No hay registro de Gradle (falló antes de compilar)." >> report.md; fi
-          echo '~~~' >> report.md
-          gh issue create --title "CrediAgenda build ${GITHUB_RUN_ID} ${BUILD_STATUS}" --body-file report.md
