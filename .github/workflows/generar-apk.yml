@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      issues: write
     steps:
       - name: Obtener codigo
         uses: actions/checkout@v4
@@ -34,7 +35,10 @@ jobs:
         with:
           gradle-version: '8.11.1'
       - name: Compilar CrediAgenda
-        run: gradle --no-daemon assembleDebug
+        shell: bash
+        run: |
+          set -o pipefail
+          gradle --no-daemon assembleDebug 2>&1 | tee build.log
       - name: Publicar APK
         uses: actions/upload-artifact@v4
         with:
@@ -42,3 +46,19 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
+      - name: Informar resultado de compilación
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BUILD_STATUS: ${{ job.status }}
+        run: |
+          echo "### Compilación: ${BUILD_STATUS}" > report.md
+          echo "Ejecución: https://github.com/${GH_REPO}/actions/runs/${GITHUB_RUN_ID}" >> report.md
+          echo "" >> report.md
+          echo '### Últimas líneas del registro' >> report.md
+          echo '~~~' >> report.md
+          if test -f build.log; then tail -n 65 build.log >> report.md; else echo "No hay registro de Gradle (falló antes de compilar)." >> report.md; fi
+          echo '~~~' >> report.md
+          gh issue create --title "CrediAgenda build ${GITHUB_RUN_ID} ${BUILD_STATUS}" --body-file report.md
