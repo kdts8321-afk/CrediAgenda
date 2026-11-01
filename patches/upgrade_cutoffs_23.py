@@ -22,13 +22,14 @@ s = replace_once(s, '        db.execSQL("CREATE INDEX ix_payments_due ON payment
             "PRIMARY KEY(card_id, month))");
         db.execSQL("CREATE INDEX ix_payments_due ON payments(due_date)");''', "tabla nueva")
 
-s = replace_once(s,
-    '        if (oldVersion < 3) db.execSQL("ALTER TABLE cards ADD COLUMN network TEXT NOT NULL DEFAULT \\'\\'");',
-    '''        if (oldVersion < 3) db.execSQL("ALTER TABLE cards ADD COLUMN network TEXT NOT NULL DEFAULT ''");
+upgrade_line = next((line for line in s.splitlines() if "if (oldVersion < 3)" in line), None)
+if upgrade_line is None: raise RuntimeError("Falta migración version 3")
+s = replace_once(s, upgrade_line,
+    upgrade_line + """
         if (oldVersion < 4) db.execSQL("CREATE TABLE IF NOT EXISTS card_cutoffs (" +
             "card_id INTEGER NOT NULL REFERENCES cards(id) ON DELETE CASCADE, " +
             "month TEXT NOT NULL, cutoff_date TEXT NOT NULL, " +
-            "PRIMARY KEY(card_id, month))");''', "migracion schema 4")
+            "PRIMARY KEY(card_id, month))");""", "migracion schema 4")
 
 s = replace_once(s, '            db.delete("payments", null, null);\n            db.delete("cards", null, null);',
     '''            db.delete("payments", null, null);
