@@ -1,0 +1,44 @@
+name: Generar APK de CrediAgenda
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  compilar:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Obtener codigo
+        uses: actions/checkout@v4
+      - name: Reconstruir y verificar codigo fuente
+        shell: bash
+        run: |
+          cat source-1.b64 source-2.b64 source-3.b64 source-4.b64 | base64 --decode > source.tar.xz
+          echo '8d173e9371206ea51d8538176e29a38d934a6954a563019f3b8d53629ad16ac8  source.tar.xz' | sha256sum --check
+          tar -xJf source.tar.xz
+          test -f app/src/main/AndroidManifest.xml
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Configurar SDK Android
+        uses: android-actions/setup-android@v3
+      - name: Instalar SDK Android
+        run: sdkmanager --install 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Configurar Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Compilar CrediAgenda
+        run: gradle --no-daemon assembleDebug
+      - name: Publicar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: CrediAgenda-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
