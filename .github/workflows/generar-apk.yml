@@ -1,4 +1,4 @@
-name: CrediAgenda 2.1 - Bancos de Mexico y privacidad
+name: CrediAgenda 2.2 - Acceso con PIN o patrón
 
 on:
   push:
@@ -27,12 +27,13 @@ jobs:
         run: |
           python patches/upgrade_cards.py
           python patches/upgrade_privacy_21.py
+          python patches/upgrade_access_22.py
           python patches/create_logos.py
-          sed -i "s/applicationId 'mx.crediagenda.app'/applicationId 'mx.crediagenda.app.mx21'/" app/build.gradle
-          sed -i "s/versionCode 1/versionCode 3/" app/build.gradle
-          sed -i "s/versionName '1.0'/versionName '2.1'/" app/build.gradle
-          sed -i 's/android:label="CrediAgenda"/android:label="CrediAgenda 2.1"/' app/src/main/AndroidManifest.xml
-          grep "applicationId 'mx.crediagenda.app.mx21'" app/build.gradle
+          sed -i "s/applicationId 'mx.crediagenda.app'/applicationId 'mx.crediagenda.app.mx22'/" app/build.gradle
+          sed -i "s/versionCode 1/versionCode 4/" app/build.gradle
+          sed -i "s/versionName '1.0'/versionName '2.2'/" app/build.gradle
+          sed -i 's/android:label="CrediAgenda"/android:label="CrediAgenda 2.2"/' app/src/main/AndroidManifest.xml
+          grep "applicationId 'mx.crediagenda.app.mx22'" app/build.gradle
       - name: Configurar Java
         uses: actions/setup-java@v4
         with:
@@ -60,9 +61,9 @@ jobs:
           pass="$(openssl rand -hex 24)"
           keytool -genkeypair -keystore "$tmp/key.jks" -alias crediagenda -storepass "$pass" -keypass "$pass" -keyalg RSA -keysize 3072 -validity 3650 -dname "CN=CrediAgenda Version 2, O=Personal, C=MX"
           "$ANDROID_HOME/build-tools/35.0.0/zipalign" -f -p 4 app/build/outputs/apk/release/app-release-unsigned.apk "$tmp/align.apk"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$tmp/key.jks" --ks-key-alias crediagenda --ks-pass "pass:$pass" --key-pass "pass:$pass" --v2-signing-enabled true --v3-signing-enabled true --out CrediAgenda-2.1.apk "$tmp/align.apk"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs CrediAgenda-2.1.apk
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging CrediAgenda-2.1.apk | head -n 19
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$tmp/key.jks" --ks-key-alias crediagenda --ks-pass "pass:$pass" --key-pass "pass:$pass" --v2-signing-enabled true --v3-signing-enabled true --out CrediAgenda-2.2.apk "$tmp/align.apk"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs CrediAgenda-2.2.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging CrediAgenda-2.2.apk | head -n 19
           rm -rf "$tmp"
       - name: Habilitar KVM
         shell: bash
@@ -79,15 +80,16 @@ jobs:
           profile: pixel_5
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
           script: |
-            adb install CrediAgenda-2.1.apk
-            adb shell pm path mx.crediagenda.app.mx21
-            adb shell am start -W -n mx.crediagenda.app.mx21/mx.crediagenda.app.MainActivity
+            adb install CrediAgenda-2.2.apk
+            adb shell pm path mx.crediagenda.app.mx22
+            adb shell am start -W -n mx.crediagenda.app.mx22/mx.crediagenda.app.MainActivity
             sleep 4
-            adb shell pidof mx.crediagenda.app.mx21
+            adb shell pidof mx.crediagenda.app.mx22
+            python patches/check_access_22.py
       - name: Publicar APK de CrediAgenda 2
         uses: actions/upload-artifact@v4
         with:
-          name: CrediAgenda-2.1-APK
-          path: CrediAgenda-2.1.apk
+          name: CrediAgenda-2.2-APK
+          path: CrediAgenda-2.2.apk
           if-no-files-found: error
           retention-days: 30
