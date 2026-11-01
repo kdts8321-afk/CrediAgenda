@@ -3,6 +3,7 @@ import re, subprocess, time, xml.etree.ElementTree as ET
 import os
 
 PKG = os.environ.get("CREDIAGENDA_TEST_PACKAGE", "mx.crediagenda.app.mx22")
+APP_LABEL = os.environ.get("CREDIAGENDA_APP_LABEL", "CrediAgenda")
 ACTIVITY = f"{PKG}/mx.crediagenda.app.MainActivity"
 
 def adb(*args):
@@ -62,7 +63,7 @@ adb("shell","input","keyevent","3")
 time.sleep(2)
 adb("shell","am","start","-W","-n",ACTIVITY)
 time.sleep(1)
-find(text="CrediAgenda protegida",substring=True)
+find(text=f"{APP_LABEL} protegida",substring=True)
 assert not any("TU CONTROL FINANCIERO" in t for t in text_list())
 pin("654321")
 tap("Desbloquear")
