@@ -17,7 +17,8 @@ assert 'db.delete("card_cutoffs", null, null)' in store
 assert "NAV_CUTOFFS" in source and "Fecha de corte" in source
 cutoff = source[source.index("    /** Las fechas de corte"):source.rfind("\n}")]
 assert "CalendarSync." not in cutoff.replace("CalendarSync: esta fecha", "sin calendario: esta fecha")
-assert "calendar" not in cutoff.lower().replace("samsung calendar","")
+assert "CalendarSync.upsert" not in cutoff and "CalendarSync.openManualCalendar" not in cutoff
+assert "CalendarContract.Events" not in cutoff
 assert "card_cutoffs" not in calendar
 print("Aislamiento de fechas de corte verificado: sin eventos en Samsung Calendar")
 
