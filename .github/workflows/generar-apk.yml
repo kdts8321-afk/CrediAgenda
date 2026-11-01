@@ -7,7 +7,7 @@ on:
 
 jobs:
   compilar:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       issues: write
@@ -26,10 +26,13 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Configurar SDK Android
-        uses: android-actions/setup-android@v3
-      - name: Instalar SDK Android
-        run: sdkmanager --install 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Preparar SDK Android preinstalado
+        shell: bash
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls -la "$ANDROID_HOME/cmdline-tools"
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager --install 'platforms;android-35' 'build-tools;35.0.0'
       - name: Configurar Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
