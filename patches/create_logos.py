@@ -57,6 +57,9 @@ save_logo("bank_nu", [
 save_logo("bank_mercado", [
     "https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/mercadopago.svg"
 ], "#009EE3")
+save_logo("bank_mercadolibre", [
+    "https://commons.wikimedia.org/wiki/Special:Redirect/file/Mercado_Libre_wordmark_%28Spanish_version%29.svg"
+])
 save_logo("network_visa", [
     "https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/visa.svg"
 ], "#1434CB")
