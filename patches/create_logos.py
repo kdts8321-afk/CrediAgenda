@@ -40,7 +40,7 @@ def save_logo(name, urls, fill=None):
     cairosvg.svg2png(bytestring=svg, write_to=str(out / (name + ".png")), output_width=540)
 
 save_logo("bank_bbva", [
-    "https://upload.wikimedia.org/wikipedia/commons/7/70/Logotipo_de_BBVA.svg",
+    "https://commons.wikimedia.org/wiki/Special:Redirect/file/BBVA_logo_2025.svg",
     "https://raw.githubusercontent.com/JabberLabs/awesome-dashboard-icons/main/icons/bbva.svg"
 ])
 save_logo("bank_banamex", [
@@ -50,6 +50,15 @@ save_logo("bank_banamex", [
 save_logo("bank_stori", [
     "https://commons.wikimedia.org/wiki/Special:Redirect/file/Stori_Logo_2023.svg",
     "https://commons.wikimedia.org/wiki/Special:Redirect/file/Stori_logo.svg",
+])
+save_logo("bank_hsbc", [
+    "https://commons.wikimedia.org/wiki/Special:Redirect/file/Hsbc-logo.svg",
+])
+save_logo("bank_santander", [
+    "https://commons.wikimedia.org/wiki/Special:Redirect/file/Banco_Santander_Logotipo.svg",
+])
+save_logo("bank_banorte", [
+    "https://commons.wikimedia.org/wiki/Special:Redirect/file/Logo_de_Banorte.svg",
 ])
 save_logo("bank_nu", [
     "https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/nubank.svg"
