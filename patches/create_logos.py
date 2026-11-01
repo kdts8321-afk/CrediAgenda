@@ -31,6 +31,12 @@ def save_logo(name, urls, fill=None):
     svg = fetch(urls)
     if fill:
         svg = re.sub(rb"<svg\b", b'<svg fill="' + fill.encode() + b'"', svg, count=1)
+    # Algunos SVG incluyen entidades XML de Inkscape; se expanden con control antes del render.
+    entities = re.findall(rb'<!ENTITY\\s+([A-Za-z_][A-Za-z0-9_-]*)\\s+"([^"]*)"', svg)
+    for key, value in entities:
+        svg = svg.replace(b"&" + key + b";", value)
+    svg = re.sub(rb'<!DOCTYPE.*?\\]>', b"", svg, flags=re.S)
+    svg = re.sub(rb'<!DOCTYPE[^>]*>', b"", svg, flags=re.S)
     cairosvg.svg2png(bytestring=svg, write_to=str(out / (name + ".png")), output_width=540)
 
 save_logo("bank_bbva", [
