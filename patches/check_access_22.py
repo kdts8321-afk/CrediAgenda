@@ -1,7 +1,8 @@
 """Prueba de interfaz: no se muestran tarjetas sin PIN, cierra al cambiar de app."""
 import re, subprocess, time, xml.etree.ElementTree as ET
+import os
 
-PKG = "mx.crediagenda.app.mx22"
+PKG = os.environ.get("CREDIAGENDA_TEST_PACKAGE", "mx.crediagenda.app.mx22")
 ACTIVITY = f"{PKG}/mx.crediagenda.app.MainActivity"
 
 def adb(*args):
