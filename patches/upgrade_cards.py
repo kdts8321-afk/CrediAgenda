@@ -54,6 +54,7 @@ new_cards = r'''    private String bankKey(String name) {
         if (s.contains("banamex") || s.contains("citi")) return "banamex";
         if (s.contains("stori")) return "stori";
         if (s.equals("nu") || s.contains("nubank")) return "nu";
+        if (s.contains("mercado libre")) return "mercadolibre";
         if (s.contains("mercado")) return "mercado";
         return "otro";
     }
@@ -65,6 +66,7 @@ new_cards = r'''    private String bankKey(String name) {
             case "stori": return new int[]{0xFF003E42, 0xFF077766};
             case "nu": return new int[]{0xFF6520A1, 0xFF9850C5};
             case "mercado": return new int[]{0xFF087BA8, 0xFF159CCB};
+            case "mercadolibre": return new int[]{0xFF12396D, 0xFF315B96};
             default: return new int[]{0xFF293955, 0xFF526589};
         }
     }
