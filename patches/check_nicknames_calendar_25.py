@@ -22,7 +22,8 @@ assert 'for (Models.Payment pay : store.paymentsForCard(id)) CalendarSync.upsert
 assert 'card.nickname' in j
 assert 'return "P " + (nick.isEmpty() ? card.name + " " + card.last4 : nick);' in c
 assert 'CalendarContract.Events.ALL_DAY, 1' in c
-assert 'CalendarContract.Events.EVENT_COLOR, 0xFFE53935' in c
+assert ('CalendarContract.Events.EVENT_COLOR, PREFERRED_RED' in c and
+        'CalendarContract.Events.EVENT_COLOR_KEY' in c)
 assert 'CalendarContract.Events.EVENT_TIMEZONE, "UTC"' in c
 assert 'CalendarContract.Events.DTEND, endMillis(payment)' in c
 assert 'plusDays(1).atStartOfDay(ZoneOffset.UTC)' in c
