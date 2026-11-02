@@ -98,3 +98,4 @@ jobs:
             python patches/check_biometric_haptics_26.py
             python patches/check_cutoffs_session_27.py
             python patches/check_settings_red_28.py
+            python patches/check_balance_29.py
