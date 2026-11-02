@@ -44,10 +44,25 @@ def pin(text):
     adb("shell","input","keyevent","4")
     time.sleep(.5)
 
+def await_screen(expected):
+    # El Pixel Launcher del emulador puede mostrar un ANR encima de la app.
+    # No es un fallo de Personal; se cierra ese aviso y se vuelve a abrir.
+    for attempt in range(10):
+        tree = ui()
+        items = [n.attrib.get("text", "") for n in tree.iter()]
+        if any(expected in value for value in items):
+            return
+        wait = next((n for n in tree.iter() if n.attrib.get("text") == "Wait"), None)
+        if wait is not None:
+            tap_node(wait)
+        adb("shell", "am", "start", "-n", ACTIVITY)
+        time.sleep(2)
+    raise AssertionError("Pantalla no encontrada tras reintentos: " + expected + "; visible: " + str(text_list()[:20]))
+
 print("Probar bloqueo inicial")
 adb("shell","am","force-stop",PKG)
 adb("shell","am","start","-W","-n",ACTIVITY)
-find(text="Protege tu aplicación",substring=True)
+await_screen("Protege tu aplicación")
 assert not any("TU CONTROL FINANCIERO" in t for t in text_list())
 tap("Crear PIN")
 find(text="Configura el acceso",substring=True)
@@ -63,7 +78,7 @@ adb("shell","input","keyevent","3")
 time.sleep(2)
 adb("shell","am","start","-W","-n",ACTIVITY)
 time.sleep(1)
-find(text=f"{APP_LABEL} protegida",substring=True)
+await_screen(f"{APP_LABEL} protegida")
 assert not any("TU CONTROL FINANCIERO" in t for t in text_list())
 pin("654321")
 tap("Desbloquear")
