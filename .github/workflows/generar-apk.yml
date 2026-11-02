@@ -1,4 +1,4 @@
-name: Personal 2.9 - Saldo pendiente y actualizacion protegida
+name: Personal 2.9 - Independiente, Liverpool, Departamental y pagos correctos
 
 on:
   push:
@@ -34,13 +34,16 @@ jobs:
           python patches/upgrade_cutoffs_session_27.py
           python patches/upgrade_settings_red_28.py
           python patches/upgrade_pending_balance_29.py
+          python patches/upgrade_liverpool_departamental_29.py
           python patches/create_logos.py
           python patches/personal_name_icon_24.py
-          sed -i "s/applicationId 'mx.crediagenda.app'/applicationId 'mx.crediagenda.app.personal28'/" app/build.gradle
+          sed -i "s/applicationId 'mx.crediagenda.app'/applicationId 'mx.crediagenda.app.personal29'/" app/build.gradle
           sed -i "s/versionCode 1/versionCode 11/" app/build.gradle
           sed -i "s/versionName '1.0'/versionName '2.9'/" app/build.gradle
           grep 'android:label="Personal"' app/src/main/AndroidManifest.xml
-          grep "applicationId 'mx.crediagenda.app.personal28'" app/build.gradle
+          sed -i 's/android:label="Personal"/android:label="Personal 2.9"/' app/src/main/AndroidManifest.xml
+          grep 'android:label="Personal 2.9"' app/src/main/AndroidManifest.xml
+          grep "applicationId 'mx.crediagenda.app.personal29'" app/build.gradle
       - name: Configurar Java
         uses: actions/setup-java@v4
         with:
@@ -76,8 +79,8 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/zipalign" -f -p 4 app/build/outputs/apk/release/app-release-unsigned.apk "$tmp/align.apk"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$tmp/key.jks" --ks-key-alias personal --ks-pass "pass:$pass" --key-pass "pass:$pass" --v2-signing-enabled true --v3-signing-enabled true --out Personal-2.9.apk "$tmp/align.apk"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs Personal-2.9.apk
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Personal-2.9.apk | grep "package: name='mx.crediagenda.app.personal28' versionCode='11' versionName='2.9'"
-          echo "IMPORTANTE: Firma nueva, NO actualiza Personal 2.8. No desinstales 2.8 si tienes datos."
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Personal-2.9.apk | grep "package: name='mx.crediagenda.app.personal29' versionCode='11' versionName='2.9'"
+          echo "Personal 2.9 es una instalación nueva e independiente. La 2.8 no se modifica."
       - name: Habilitar KVM
         shell: bash
         run: |
@@ -94,11 +97,11 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
           script: |
             adb install app/build/outputs/apk/debug/app-debug.apk
-            adb shell pm path mx.crediagenda.app.personal28
-            adb shell am start -W -n mx.crediagenda.app.personal28/mx.crediagenda.app.MainActivity
+            adb shell pm path mx.crediagenda.app.personal29
+            adb shell am start -W -n mx.crediagenda.app.personal29/mx.crediagenda.app.MainActivity
             sleep 4
-            adb shell pidof mx.crediagenda.app.personal28
-            CREDIAGENDA_TEST_PACKAGE=mx.crediagenda.app.personal28 CREDIAGENDA_APP_LABEL=Personal python patches/check_access_22.py
+            adb shell pidof mx.crediagenda.app.personal29
+            CREDIAGENDA_TEST_PACKAGE=mx.crediagenda.app.personal29 CREDIAGENDA_APP_LABEL=Personal python patches/check_access_22.py
             python patches/check_nicknames_calendar_25.py
             python patches/check_cutoffs_23.py
             python patches/check_biometric_haptics_26.py
