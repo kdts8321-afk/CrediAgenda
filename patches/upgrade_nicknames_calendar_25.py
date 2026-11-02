@@ -41,7 +41,9 @@ rx = re.compile(r"(?ms)(    @Override public void onUpgrade\(SQLiteDatabase db, 
 found = rx.search(s)
 if not found: raise RuntimeError("No se encontro onUpgrade de DB")
 if 'oldVersion < 4' not in found.group(2): raise RuntimeError("Falta migración de cortes")
-migration = '\n        if (oldVersion < 5) db.execSQL("ALTER TABLE cards ADD COLUMN nickname TEXT NOT NULL DEFAULT \\'\\'");'
+migration = """
+        if (oldVersion < 5) db.execSQL("ALTER TABLE cards ADD COLUMN nickname TEXT NOT NULL DEFAULT '';");
+"""
 s = s[:found.start()] + found.group(1) + found.group(2) + migration + '\n' + found.group(3) + s[found.end():]
 s = replacement(s, 'SELECT id,name,last4,digital_last4,color,network FROM cards',
     'SELECT id,name,last4,digital_last4,color,network,nickname FROM cards',
