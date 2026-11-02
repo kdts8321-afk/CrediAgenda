@@ -17,7 +17,7 @@ def rep(text, old, new, label):
 # Permisos normales (vibración) y biometría (Android controla autenticación).
 if "android.permission.VIBRATE" not in xml:
     xml = rep(xml, "<manifest", "<manifest", "check manifest") # no-op positional check
-    idx=xml.index(">")
+    idx=xml.index(">", xml.index("<manifest"))
     xml=xml[:idx+1] + """
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
