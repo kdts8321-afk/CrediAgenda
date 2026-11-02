@@ -22,11 +22,15 @@ def text_list():
     return [n.attrib.get("text","") for n in ui().iter() if n.attrib.get("text")]
 
 def find(text=None, cls=None, substring=False):
-    for n in ui().iter():
-        t=n.attrib.get("text","")
-        if cls and n.attrib.get("class") != cls: continue
-        if text is not None and not ((text in t) if substring else (text==t)): continue
-        return n
+    # El volcado de accesibilidad puede capturarse en pleno cambio de pantalla.
+    # Reintentar antes de concluir que falta un elemento.
+    for attempt in range(6):
+        for n in ui().iter():
+            t=n.attrib.get("text","")
+            if cls and n.attrib.get("class") != cls: continue
+            if text is not None and not ((text in t) if substring else (text==t)): continue
+            return n
+        time.sleep(.5)
     raise AssertionError(f"No se encontró {text or cls}; visible: {text_list()[:25]}")
 
 def tap_node(n):
