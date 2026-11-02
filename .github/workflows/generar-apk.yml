@@ -1,4 +1,4 @@
-name: Personal 2.4 - Nombre e icono minimalista
+name: Personal 2.5 - Apodos y pagos en calendario
 
 on:
   push:
@@ -20,15 +20,6 @@ jobs:
           echo '8d173e9371206ea51d8538176e29a38d934a6954a563019f3b8d53629ad16ac8  source.tar.xz' | sha256sum --check
           tar -xJf source.tar.xz
           test -f app/src/main/AndroidManifest.xml
-          echo '=== CALENDARSYNC_JAVA_START ==='
-          cat app/src/main/java/mx/crediagenda/app/CalendarSync.java
-          echo '=== CALENDARSYNC_JAVA_END ==='
-          echo '=== MODELS_JAVA_START ==='
-          cat app/src/main/java/mx/crediagenda/app/Models.java
-          echo '=== MODELS_JAVA_END ==='
-          echo '=== STORE_JAVA_START ==='
-          cat app/src/main/java/mx/crediagenda/app/Store.java
-          echo '=== STORE_JAVA_END ==='
       - name: Instalar herramientas para logos
         run: python -m pip install --disable-pip-version-check --quiet cairosvg Pillow
       - name: Actualizar interfaz y preparar logos
@@ -38,13 +29,14 @@ jobs:
           python patches/upgrade_privacy_21.py
           python patches/upgrade_access_22.py
           python patches/upgrade_cutoffs_23.py
+          python patches/upgrade_nicknames_calendar_25.py
           python patches/create_logos.py
           python patches/personal_name_icon_24.py
-          sed -i "s/applicationId 'mx.crediagenda.app'/applicationId 'mx.crediagenda.app.personal24'/" app/build.gradle
-          sed -i "s/versionCode 1/versionCode 6/" app/build.gradle
-          sed -i "s/versionName '1.0'/versionName '2.4'/" app/build.gradle
+          sed -i "s/applicationId 'mx.crediagenda.app'/applicationId 'mx.crediagenda.app.personal25'/" app/build.gradle
+          sed -i "s/versionCode 1/versionCode 7/" app/build.gradle
+          sed -i "s/versionName '1.0'/versionName '2.5'/" app/build.gradle
           grep 'android:label="Personal"' app/src/main/AndroidManifest.xml
-          grep "applicationId 'mx.crediagenda.app.personal24'" app/build.gradle
+          grep "applicationId 'mx.crediagenda.app.personal25'" app/build.gradle
       - name: Configurar Java
         uses: actions/setup-java@v4
         with:
@@ -64,7 +56,7 @@ jobs:
         run: |
           set -o pipefail
           gradle --no-daemon assembleRelease 2>&1 | tee build.log
-      - name: Firmar APK Personal 2.4
+      - name: Firmar APK Personal 2.5
         shell: bash
         run: |
           set -euo pipefail
@@ -72,10 +64,10 @@ jobs:
           pass="$(openssl rand -hex 24)"
           keytool -genkeypair -keystore "$tmp/key.jks" -alias crediagenda -storepass "$pass" -keypass "$pass" -keyalg RSA -keysize 3072 -validity 3650 -dname "CN=CrediAgenda Version 2, O=Personal, C=MX"
           "$ANDROID_HOME/build-tools/35.0.0/zipalign" -f -p 4 app/build/outputs/apk/release/app-release-unsigned.apk "$tmp/align.apk"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$tmp/key.jks" --ks-key-alias crediagenda --ks-pass "pass:$pass" --key-pass "pass:$pass" --v2-signing-enabled true --v3-signing-enabled true --out Personal-2.4.apk "$tmp/align.apk"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs Personal-2.4.apk
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Personal-2.4.apk | head -n 19
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Personal-2.4.apk | grep -F "application-label:'Personal'"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$tmp/key.jks" --ks-key-alias crediagenda --ks-pass "pass:$pass" --key-pass "pass:$pass" --v2-signing-enabled true --v3-signing-enabled true --out Personal-2.5.apk "$tmp/align.apk"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs Personal-2.5.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Personal-2.5.apk | head -n 19
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Personal-2.5.apk | grep -F "application-label:'Personal'"
           rm -rf "$tmp"
       - name: Habilitar KVM
         shell: bash
@@ -92,17 +84,18 @@ jobs:
           profile: pixel_5
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
           script: |
-            adb install Personal-2.4.apk
-            adb shell pm path mx.crediagenda.app.personal24
-            adb shell am start -W -n mx.crediagenda.app.personal24/mx.crediagenda.app.MainActivity
+            adb install Personal-2.5.apk
+            adb shell pm path mx.crediagenda.app.personal25
+            adb shell am start -W -n mx.crediagenda.app.personal25/mx.crediagenda.app.MainActivity
             sleep 4
-            adb shell pidof mx.crediagenda.app.personal24
-            CREDIAGENDA_TEST_PACKAGE=mx.crediagenda.app.personal24 CREDIAGENDA_APP_LABEL=Personal python patches/check_access_22.py
+            adb shell pidof mx.crediagenda.app.personal25
+            CREDIAGENDA_TEST_PACKAGE=mx.crediagenda.app.personal25 CREDIAGENDA_APP_LABEL=Personal python patches/check_access_22.py
+            python patches/check_nicknames_calendar_25.py
             python patches/check_cutoffs_23.py
-      - name: Publicar APK Personal 2.4
+      - name: Publicar APK Personal 2.5
         uses: actions/upload-artifact@v4
         with:
-          name: Personal-2.4-APK
-          path: Personal-2.4.apk
+          name: Personal-2.5-APK
+          path: Personal-2.5.apk
           if-no-files-found: error
           retention-days: 30
