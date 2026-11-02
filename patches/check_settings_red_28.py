@@ -37,8 +37,8 @@ def find(value, field="text"):
     adb("shell","uiautomator","dump","/sdcard/personal28.xml")
     root=ET.fromstring(adb("shell","cat","/sdcard/personal28.xml"))
     for n in root.iter():
-        if value in n.attrib.get(field,""):return n
-    raise AssertionError("No aparece: "+value)
+        if value.casefold() in n.attrib.get(field,"").casefold():return n
+    raise AssertionError("No aparece: "+value+"; visibles: "+str([x.attrib.get("text") for x in root.iter() if x.attrib.get("text")][:25]))
 def tap_node(n):
     xy=list(map(int,re.findall(r"\d+",n.attrib["bounds"])))
     adb("shell","input","tap",str((xy[0]+xy[2])//2),str((xy[1]+xy[3])//2))
