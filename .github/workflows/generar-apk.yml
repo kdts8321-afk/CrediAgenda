@@ -20,6 +20,15 @@ jobs:
           echo '8d173e9371206ea51d8538176e29a38d934a6954a563019f3b8d53629ad16ac8  source.tar.xz' | sha256sum --check
           tar -xJf source.tar.xz
           test -f app/src/main/AndroidManifest.xml
+          echo '=== CALENDARSYNC_JAVA_START ==='
+          cat app/src/main/java/mx/crediagenda/app/CalendarSync.java
+          echo '=== CALENDARSYNC_JAVA_END ==='
+          echo '=== MODELS_JAVA_START ==='
+          cat app/src/main/java/mx/crediagenda/app/Models.java
+          echo '=== MODELS_JAVA_END ==='
+          echo '=== STORE_JAVA_START ==='
+          cat app/src/main/java/mx/crediagenda/app/Store.java
+          echo '=== STORE_JAVA_END ==='
       - name: Instalar herramientas para logos
         run: python -m pip install --disable-pip-version-check --quiet cairosvg Pillow
       - name: Actualizar interfaz y preparar logos
