@@ -1,4 +1,4 @@
-name: Personal 2.6 - Biometria y vibracion de patron
+name: Personal 2.7 - Corte siguiente mes y bloqueo solo al salir
 
 on:
   push:
@@ -31,13 +31,14 @@ jobs:
           python patches/upgrade_cutoffs_23.py
           python patches/upgrade_nicknames_calendar_25.py
           python patches/upgrade_biometric_haptics_26.py
+          python patches/upgrade_cutoffs_session_27.py
           python patches/create_logos.py
           python patches/personal_name_icon_24.py
-          sed -i "s/applicationId 'mx.crediagenda.app'/applicationId 'mx.crediagenda.app.personal26'/" app/build.gradle
-          sed -i "s/versionCode 1/versionCode 8/" app/build.gradle
-          sed -i "s/versionName '1.0'/versionName '2.6'/" app/build.gradle
+          sed -i "s/applicationId 'mx.crediagenda.app'/applicationId 'mx.crediagenda.app.personal27'/" app/build.gradle
+          sed -i "s/versionCode 1/versionCode 9/" app/build.gradle
+          sed -i "s/versionName '1.0'/versionName '2.7'/" app/build.gradle
           grep 'android:label="Personal"' app/src/main/AndroidManifest.xml
-          grep "applicationId 'mx.crediagenda.app.personal26'" app/build.gradle
+          grep "applicationId 'mx.crediagenda.app.personal27'" app/build.gradle
       - name: Configurar Java
         uses: actions/setup-java@v4
         with:
@@ -57,7 +58,7 @@ jobs:
         run: |
           set -o pipefail
           gradle --no-daemon assembleRelease 2>&1 | tee build.log
-      - name: Firmar APK Personal 2.6
+      - name: Firmar APK Personal 2.7
         shell: bash
         run: |
           set -euo pipefail
@@ -65,10 +66,10 @@ jobs:
           pass="$(openssl rand -hex 24)"
           keytool -genkeypair -keystore "$tmp/key.jks" -alias crediagenda -storepass "$pass" -keypass "$pass" -keyalg RSA -keysize 3072 -validity 3650 -dname "CN=CrediAgenda Version 2, O=Personal, C=MX"
           "$ANDROID_HOME/build-tools/35.0.0/zipalign" -f -p 4 app/build/outputs/apk/release/app-release-unsigned.apk "$tmp/align.apk"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$tmp/key.jks" --ks-key-alias crediagenda --ks-pass "pass:$pass" --key-pass "pass:$pass" --v2-signing-enabled true --v3-signing-enabled true --out Personal-2.6.apk "$tmp/align.apk"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs Personal-2.6.apk
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Personal-2.6.apk | head -n 19
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Personal-2.6.apk | grep -F "application-label:'Personal'"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$tmp/key.jks" --ks-key-alias crediagenda --ks-pass "pass:$pass" --key-pass "pass:$pass" --v2-signing-enabled true --v3-signing-enabled true --out Personal-2.7.apk "$tmp/align.apk"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs Personal-2.7.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Personal-2.7.apk | head -n 19
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Personal-2.7.apk | grep -F "application-label:'Personal'"
           rm -rf "$tmp"
       - name: Habilitar KVM
         shell: bash
@@ -85,19 +86,20 @@ jobs:
           profile: pixel_5
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
           script: |
-            adb install Personal-2.6.apk
-            adb shell pm path mx.crediagenda.app.personal26
-            adb shell am start -W -n mx.crediagenda.app.personal26/mx.crediagenda.app.MainActivity
+            adb install Personal-2.7.apk
+            adb shell pm path mx.crediagenda.app.personal27
+            adb shell am start -W -n mx.crediagenda.app.personal27/mx.crediagenda.app.MainActivity
             sleep 4
-            adb shell pidof mx.crediagenda.app.personal26
-            CREDIAGENDA_TEST_PACKAGE=mx.crediagenda.app.personal26 CREDIAGENDA_APP_LABEL=Personal python patches/check_access_22.py
+            adb shell pidof mx.crediagenda.app.personal27
+            CREDIAGENDA_TEST_PACKAGE=mx.crediagenda.app.personal27 CREDIAGENDA_APP_LABEL=Personal python patches/check_access_22.py
             python patches/check_nicknames_calendar_25.py
             python patches/check_cutoffs_23.py
             python patches/check_biometric_haptics_26.py
-      - name: Publicar APK Personal 2.6
+            python patches/check_cutoffs_session_27.py
+      - name: Publicar APK Personal 2.7
         uses: actions/upload-artifact@v4
         with:
-          name: Personal-2.6-APK
-          path: Personal-2.6.apk
+          name: Personal-2.7-APK
+          path: Personal-2.7.apk
           if-no-files-found: error
           retention-days: 30
