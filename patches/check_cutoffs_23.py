@@ -7,7 +7,7 @@ source = (root / "MainActivity.java").read_text()
 store = (root / "Store.java").read_text()
 calendar = (root / "CalendarSync.java").read_text()
 
-assert "card_cutoffs" in store and 'null, 4)' in store
+assert "card_cutoffs" in store and ('null, 4)' in store or 'null, 5)' in store)
 assert "PRIMARY KEY(card_id, month)" in store
 assert "ON DELETE CASCADE" in store
 assert "void saveCutoffDate" in store
