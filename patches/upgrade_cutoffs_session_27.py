@@ -38,6 +38,21 @@ j=replace1(j,
     }''',
     "no bloquear en pausas momentaneas")
 
+# Android distingue la salida voluntaria (Inicio, cambiar de app) de una
+# pausa interna al abrir un formulario o permiso. onStop queda como respaldo.
+j=replace1(j,
+    '    @Override protected void onStop() {',
+    '''    @Override protected void onUserLeaveHint() {
+        super.onUserLeaveHint();
+        accessUnlocked = false;
+        clearPendingAccess();
+        biometricAutoAttempted = false;
+        if (store != null && body != null) showAccessScreen();
+    }
+
+    @Override protected void onStop() {''',
+    "bloqueo al salir por Home/otras apps")
+
 # onStop sigue bloqueando por completo al salir de Personal.
 assert '    @Override protected void onStop() {' in j
 assert '        accessUnlocked = false;\n        // Si el usuario se cambia de app durante el diálogo' in j
