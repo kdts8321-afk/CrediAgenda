@@ -1,0 +1,43 @@
+name: Descargar Personal 3.0 sin Library
+
+on:
+  push:
+    paths:
+      - .github/workflows/publicar-apk-directa.yml
+  workflow_dispatch:
+
+jobs:
+  publicar:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: Descargar el APK compilado y firmado
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p distribucion
+          gh run download 41533627614 --repo "$GITHUB_REPOSITORY" --name Personal-3.0-APK --dir distribucion
+          test -s distribucion/Personal-3.0.apk
+          file distribucion/Personal-3.0.apk
+      - name: Crear ZIP instalable
+        run: |
+          set -euo pipefail
+          cd distribucion
+          zip -9 INSTALAR_PERSONAL_3_0.zip Personal-3.0.apk
+          unzip -t INSTALAR_PERSONAL_3_0.zip
+          test -s INSTALAR_PERSONAL_3_0.zip
+      - name: Publicar descarga directa en GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="personal-v3.0"
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$tag" distribucion/INSTALAR_PERSONAL_3_0.zip distribucion/Personal-3.0.apk --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$tag" distribucion/INSTALAR_PERSONAL_3_0.zip distribucion/Personal-3.0.apk --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Personal 3.0 para Android" --notes "Versión independiente con Liverpool, tarjetas departamentales, corrección de saldos y exportación mensual de pagos realizados a Excel. Descarga INSTALAR_PERSONAL_3_0.zip, extrae Personal-3.0.apk e instálala en Android. No necesitas programación."
+          fi
+          gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json url,assets
