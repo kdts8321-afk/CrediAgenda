@@ -101,7 +101,7 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/zipalign" -f -p 4 app/build/outputs/apk/release/app-release-unsigned.apk "$tmp/align.apk"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$tmp/key.jks" --ks-key-alias personal --ks-pass "pass:$pass" --key-pass "pass:$pass" --v2-signing-enabled true --v3-signing-enabled true --out Personal-3.0.apk "$tmp/align.apk"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs Personal-3.0.apk
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Personal-3.0.apk | grep "package: name='mx.crediagenda.app.personal30' versionCode='11' versionName='2.9'"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Personal-3.0.apk | grep "package: name='mx.crediagenda.app.personal30' versionCode='12' versionName='3.0'"
           echo "Personal 3.0 es una instalación nueva e independiente. La 2.8 no se modifica."
       - name: Habilitar KVM
         shell: bash
