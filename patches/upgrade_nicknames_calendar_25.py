@@ -32,9 +32,10 @@ models_path.write_text(m)
 
 s = replacement(s, 'super(context, "crediagenda.db", null, 4)',
     'super(context, "crediagenda.db", null, 5)', "Schema version")
-s = replacement(s, "network TEXT NOT NULL DEFAULT ''",
-    "network TEXT NOT NULL DEFAULT '', nickname TEXT NOT NULL DEFAULT ''",
-    "Crear columna nickname", expected=1)
+s = replacement(s,
+    "color INTEGER NOT NULL DEFAULT 0, network TEXT NOT NULL DEFAULT ''",
+    "color INTEGER NOT NULL DEFAULT 0, network TEXT NOT NULL DEFAULT '', nickname TEXT NOT NULL DEFAULT ''",
+    "Crear columna nickname")
 # insert migration inside onUpgrade, after existing migrations.
 rx = re.compile(r"(?ms)(    @Override public void onUpgrade\(SQLiteDatabase db, int oldVersion, int newVersion\) \{)(.*?)(^    \})")
 found = rx.search(s)
