@@ -66,12 +66,18 @@ jobs:
           mkdir -p /tmp/personal29
           javac -encoding UTF-8 -d /tmp/personal29 app/src/main/java/mx/crediagenda/app/Models.java app/src/main/java/mx/crediagenda/app/PaymentRules.java patches/VerifyBalance29.java
           java -cp /tmp/personal29 mx.crediagenda.app.VerifyBalance29
-      - name: Advertencia de firma para actualización
+      - name: Firmar APK 2.9
         shell: bash
         run: |
-          echo "La versión 2.8 usa una firma efímera sin clave privada recuperable."
-          echo "Por seguridad, la versión 2.9 solo se construye como código y prueba interna."
-          echo "No se publica otro APK que obligue a perder datos o instalar duplicado."
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          pass="$(openssl rand -hex 24)"
+          keytool -genkeypair -keystore "$tmp/key.jks" -alias personal -storepass "$pass" -keypass "$pass" -keyalg RSA -keysize 3072 -validity 3650 -dname "CN=Personal 2.9, O=Personal, C=MX"
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -f -p 4 app/build/outputs/apk/release/app-release-unsigned.apk "$tmp/align.apk"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$tmp/key.jks" --ks-key-alias personal --ks-pass "pass:$pass" --key-pass "pass:$pass" --v2-signing-enabled true --v3-signing-enabled true --out Personal-2.9.apk "$tmp/align.apk"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs Personal-2.9.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Personal-2.9.apk | grep "package: name='mx.crediagenda.app.personal28' versionCode='11' versionName='2.9'"
+          echo "IMPORTANTE: Firma nueva, NO actualiza Personal 2.8. No desinstales 2.8 si tienes datos."
       - name: Habilitar KVM
         shell: bash
         run: |
@@ -99,3 +105,11 @@ jobs:
             python patches/check_cutoffs_session_27.py
             python patches/check_settings_red_28.py
             python patches/check_balance_29.py
+
+      - name: Publicar APK Personal 2.9
+        uses: actions/upload-artifact@v4
+        with:
+          name: Personal-2.9-APK
+          path: Personal-2.9.apk
+          if-no-files-found: error
+          retention-days: 30
