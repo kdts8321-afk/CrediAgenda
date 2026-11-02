@@ -103,6 +103,14 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs Personal-3.0.apk
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Personal-3.0.apk | grep "package: name='mx.crediagenda.app.personal30' versionCode='12' versionName='3.0'"
           echo "Personal 3.0 es una instalación nueva e independiente. La 2.8 no se modifica."
+      - name: Publicar APK Personal 3.0
+        uses: actions/upload-artifact@v4
+        with:
+          name: Personal-3.0-APK
+          path: Personal-3.0.apk
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Habilitar KVM
         shell: bash
         run: |
@@ -131,10 +139,3 @@ jobs:
             python patches/check_settings_red_28.py
             python patches/check_balance_29.py
 
-      - name: Publicar APK Personal 3.0
-        uses: actions/upload-artifact@v4
-        with:
-          name: Personal-3.0-APK
-          path: Personal-3.0.apk
-          if-no-files-found: error
-          retention-days: 30
