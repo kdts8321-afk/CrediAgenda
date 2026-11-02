@@ -1,4 +1,4 @@
-name: Personal 2.9 - Independiente, Liverpool, Departamental y pagos correctos
+name: Personal 3.0 - Exportar Excel mensual y saldo pagado
 
 on:
   push:
@@ -20,6 +20,9 @@ jobs:
           echo '8d173e9371206ea51d8538176e29a38d934a6954a563019f3b8d53629ad16ac8  source.tar.xz' | sha256sum --check
           tar -xJf source.tar.xz
           test -f app/src/main/AndroidManifest.xml
+          base64 --decode patches/export30.tar.xz.b64 > /tmp/export30.tar.xz
+          echo '5ffeaf49fd3450fe3a4e9c9bf4433260307329990fa9fb1974e87db01882c51a  /tmp/export30.tar.xz' | sha256sum --check
+          tar -xJf /tmp/export30.tar.xz -C patches
       - name: Instalar herramientas para logos
         run: python -m pip install --disable-pip-version-check --quiet cairosvg Pillow
       - name: Actualizar interfaz y preparar logos
@@ -35,15 +38,17 @@ jobs:
           python patches/upgrade_settings_red_28.py
           python patches/upgrade_pending_balance_29.py
           python patches/upgrade_liverpool_departamental_29.py
+          python patches/upgrade_export_30.py
+          cp patches/PaymentExportXlsx.java app/src/main/java/mx/crediagenda/app/PaymentExportXlsx.java
           python patches/create_logos.py
           python patches/personal_name_icon_24.py
-          sed -i "s/applicationId 'mx.crediagenda.app'/applicationId 'mx.crediagenda.app.personal29'/" app/build.gradle
-          sed -i "s/versionCode 1/versionCode 11/" app/build.gradle
-          sed -i "s/versionName '1.0'/versionName '2.9'/" app/build.gradle
+          sed -i "s/applicationId 'mx.crediagenda.app'/applicationId 'mx.crediagenda.app.personal30'/" app/build.gradle
+          sed -i "s/versionCode 1/versionCode 12/" app/build.gradle
+          sed -i "s/versionName '1.0'/versionName '3.0'/" app/build.gradle
           grep 'android:label="Personal"' app/src/main/AndroidManifest.xml
-          sed -i 's/android:label="Personal"/android:label="Personal 2.9"/' app/src/main/AndroidManifest.xml
-          grep 'android:label="Personal 2.9"' app/src/main/AndroidManifest.xml
-          grep "applicationId 'mx.crediagenda.app.personal29'" app/build.gradle
+          sed -i 's/android:label="Personal"/android:label="Personal 3.0"/' app/src/main/AndroidManifest.xml
+          grep 'android:label="Personal 3.0"' app/src/main/AndroidManifest.xml
+          grep "applicationId 'mx.crediagenda.app.personal30'" app/build.gradle
       - name: Configurar Java
         uses: actions/setup-java@v4
         with:
@@ -69,18 +74,35 @@ jobs:
           mkdir -p /tmp/personal29
           javac -encoding UTF-8 -d /tmp/personal29 app/src/main/java/mx/crediagenda/app/Models.java app/src/main/java/mx/crediagenda/app/PaymentRules.java patches/VerifyBalance29.java
           java -cp /tmp/personal29 mx.crediagenda.app.VerifyBalance29
-      - name: Firmar APK 2.9
+      - name: Probar exportacion Excel por mes y tarjetas
+        shell: bash
+        run: |
+          mkdir -p /tmp/personal_excel_30
+          javac -encoding UTF-8 -d /tmp/personal_excel_30 app/src/main/java/mx/crediagenda/app/Models.java app/src/main/java/mx/crediagenda/app/PaymentExportXlsx.java patches/VerifyExport30.java
+          java -cp /tmp/personal_excel_30 mx.crediagenda.app.VerifyExport30
+          python - <<'PY'
+          from zipfile import ZipFile
+          import xml.etree.ElementTree as ET
+          path='/tmp/personal_export_30_test.xlsx'
+          with ZipFile(path) as z:
+              assert {'xl/workbook.xml','xl/worksheets/sheet1.xml','xl/styles.xml'} <= set(z.namelist())
+              for name in z.namelist():
+                  if name.endswith('.xml') or name.endswith('.rels'):
+                      ET.fromstring(z.read(name))
+          print('Excel OOXML y XML validos')
+          PY
+      - name: Firmar APK 3.0
         shell: bash
         run: |
           set -euo pipefail
           tmp="$(mktemp -d)"
           pass="$(openssl rand -hex 24)"
-          keytool -genkeypair -keystore "$tmp/key.jks" -alias personal -storepass "$pass" -keypass "$pass" -keyalg RSA -keysize 3072 -validity 3650 -dname "CN=Personal 2.9, O=Personal, C=MX"
+          keytool -genkeypair -keystore "$tmp/key.jks" -alias personal -storepass "$pass" -keypass "$pass" -keyalg RSA -keysize 3072 -validity 3650 -dname "CN=Personal 3.0, O=Personal, C=MX"
           "$ANDROID_HOME/build-tools/35.0.0/zipalign" -f -p 4 app/build/outputs/apk/release/app-release-unsigned.apk "$tmp/align.apk"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$tmp/key.jks" --ks-key-alias personal --ks-pass "pass:$pass" --key-pass "pass:$pass" --v2-signing-enabled true --v3-signing-enabled true --out Personal-2.9.apk "$tmp/align.apk"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs Personal-2.9.apk
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Personal-2.9.apk | grep "package: name='mx.crediagenda.app.personal29' versionCode='11' versionName='2.9'"
-          echo "Personal 2.9 es una instalación nueva e independiente. La 2.8 no se modifica."
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$tmp/key.jks" --ks-key-alias personal --ks-pass "pass:$pass" --key-pass "pass:$pass" --v2-signing-enabled true --v3-signing-enabled true --out Personal-3.0.apk "$tmp/align.apk"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs Personal-3.0.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging Personal-3.0.apk | grep "package: name='mx.crediagenda.app.personal30' versionCode='11' versionName='2.9'"
+          echo "Personal 3.0 es una instalación nueva e independiente. La 2.8 no se modifica."
       - name: Habilitar KVM
         shell: bash
         run: |
@@ -97,11 +119,11 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
           script: |
             adb install app/build/outputs/apk/debug/app-debug.apk
-            adb shell pm path mx.crediagenda.app.personal29
-            adb shell am start -W -n mx.crediagenda.app.personal29/mx.crediagenda.app.MainActivity
+            adb shell pm path mx.crediagenda.app.personal30
+            adb shell am start -W -n mx.crediagenda.app.personal30/mx.crediagenda.app.MainActivity
             sleep 4
-            adb shell pidof mx.crediagenda.app.personal29
-            CREDIAGENDA_TEST_PACKAGE=mx.crediagenda.app.personal29 CREDIAGENDA_APP_LABEL=Personal python patches/check_access_22.py
+            adb shell pidof mx.crediagenda.app.personal30
+            CREDIAGENDA_TEST_PACKAGE=mx.crediagenda.app.personal30 CREDIAGENDA_APP_LABEL=Personal python patches/check_access_22.py
             python patches/check_nicknames_calendar_25.py
             python patches/check_cutoffs_23.py
             python patches/check_biometric_haptics_26.py
@@ -109,10 +131,10 @@ jobs:
             python patches/check_settings_red_28.py
             python patches/check_balance_29.py
 
-      - name: Publicar APK Personal 2.9
+      - name: Publicar APK Personal 3.0
         uses: actions/upload-artifact@v4
         with:
-          name: Personal-2.9-APK
-          path: Personal-2.9.apk
+          name: Personal-3.0-APK
+          path: Personal-3.0.apk
           if-no-files-found: error
           retention-days: 30
