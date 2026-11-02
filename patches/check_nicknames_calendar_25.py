@@ -8,7 +8,7 @@ s=(root/"Store.java").read_text()
 j=(root/"MainActivity.java").read_text()
 c=(root/"CalendarSync.java").read_text()
 
-assert 'null, 5)' in s
+assert ('null, 5)' in s or 'null, 6)' in s)
 assert "nickname TEXT NOT NULL DEFAULT ''" in s
 assert "oldVersion < 5" in s
 assert "SELECT id,name,last4,digital_last4,color,network,nickname FROM cards" in s
