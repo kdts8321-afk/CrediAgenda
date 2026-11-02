@@ -15,7 +15,7 @@ assert "formattedCutoff(cutoff)" in j
 assert "d MMM yyyy" in j
 assert "onPause()" in j and "onStop()" in j and "onUserLeaveHint()" in j
 
-pause=j[j.index("    @Override protected void onPause() {"):j.index("    @Override protected void onStop() {")]
+pause=j[j.index("    @Override protected void onPause() {"):j.index("    @Override protected void onUserLeaveHint() {")]
 stop=j[j.index("    @Override protected void onStop() {"):j.index("    @Override protected void onStop() {")+700]
 assert "accessUnlocked = false" not in pause
 assert "clearPendingAccess()" not in pause
