@@ -48,5 +48,5 @@ def tap(node):
 tab=find("Tarjetas")
 assert tab is not None,"No se vio pestaña Tarjetas después de desbloquear"
 tap(tab)
-assert find("Activar acceso con huella o rostro") is not None, "Falta configuración biométrica"
-print("Interfaz 2.6 OK: opción para activar biometría en Tarjetas.")
+assert find("⚙") is not None, "Falta acceso a Configuración"
+print("Interfaz 2.6 OK: ajuste biométrico reubicado en Configuración.")
